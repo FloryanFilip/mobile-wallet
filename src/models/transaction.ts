@@ -1,4 +1,4 @@
-import { Transaction as TransactionModel, TransactionType } from 'ark-ts/model';
+import { Transaction as TransactionModel, TransactionType, VoteType } from 'ark-ts/model';
 import arkConfig from 'ark-ts/config';
 
 import { MarketCurrency, MarketHistory, MarketTicker } from '@models/market';
@@ -48,7 +48,6 @@ export class Transaction extends TransactionModel {
 
     this.date = new Date(this.getTimestamp() * 1000);
     delete self.network;
-
     return self;
   }
 
@@ -96,6 +95,7 @@ export class Transaction extends TransactionModel {
     let type = TX_TYPES[this.type];
 
     if (this.isTransfer() && !this.isSender()) { type = 'TRANSACTIONS_PAGE.RECEIVED'; }
+    if (this.type === TransactionType.Vote && this.isUnvote()) { type = 'DELEGATES_PAGE.UNVOTE'; }
 
     return type;
   }
@@ -104,6 +104,7 @@ export class Transaction extends TransactionModel {
     let type = TX_TYPES_ACTIVITY[this.type];
 
     if (this.isTransfer() && !this.isSender()) { type = 'TRANSACTIONS_PAGE.RECEIVED_FROM'; }
+    if (this.type === TransactionType.Vote && this.isUnvote()) { type = 'DELEGATES_PAGE.UNVOTE'; }
 
     return type;
   }
@@ -118,6 +119,14 @@ export class Transaction extends TransactionModel {
 
   isReceiver(): boolean {
     return this.recipientId === this.address;
+  }
+
+  isUnvote(): boolean {
+    if (this.asset && this.asset['votes']) {
+      const vote = this.asset['votes'][0];
+      return vote.charAt(0) === '-';
+    }
+    return false;
   }
 
 }
